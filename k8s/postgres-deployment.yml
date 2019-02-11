@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: postgres
+  template:
+    metadata:
+      labels:
+        component: postgres
+    spec:
+      volumes: 
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: database-persistent-volume-claim
+      containers:
+        - name: postgres
+          image: postgres
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            # find volume with name we request to kubernetes
+            - name: postgres-storage
+              # where postgres stores all its data
+              mountPath: /var/lib/postgresql/data
+              # subpath: any data stored in /var/lib/postgresql/data will be stored in postgres directory inside the volume
+              subPath: postgres
+          env:
+            # kubectl create secret generic pgpassword --from-literal PGPASSWORD=12345asdf
+            - name: PGPASSWORD
+              valueFrom: 
+                secretKeyRef:
+                  # secret object name
+                  name: pgpassword
+                  key: PGPASSWORD
